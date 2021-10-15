@@ -13,55 +13,67 @@ afterAll(async () => {
   await db.destroy()
 })
 
-describe('/register tests', () => {
+describe('status tests for /register and /login', () => {
   let res
   beforeEach(async () => {
     res = await request(server).post('/api/auth/register')
-    .send({username:'test', password:'33333'})
+    .send({username:'first test', password:'33333'})
   })
 
-  it('responds with 200 OK', async () => {
+  it('responds with 200 OK for /register', async () => {
     expect(res.status).toBe(200)
   })
 
-  it('responds with the right user', async () => {
-    const expectedName = 'test'
-    const actualName = res.body.username
-
-    expect(expectedName).toEqual(actualName)
+  it('responds with 200 OK for /login', async () => {
+    res = await request(server).post('/api/auth/login')
+    .send({username:'first test', password:'33333'})
+    
+    expect(res.status).toBe(200)
   })
 })
 
-describe('/login tests', () => {
+describe('request tests for /register and /login', () => {
   let res
   beforeEach(async () => {
+    res = await request(server).post('/api/auth/register')
+    .send({username:'second test', password:'12345'})
+  })
+
+  it('responds with correct username upon registering', async () => {
+    const expected = 'second test'
+    const actual = res.body.username
+    expect(expected).toEqual(actual)
+  })
+
+  it('responds with the correct message upon login', async () => {
     res = await request(server).post('/api/auth/login')
-    .send({username:'bob', password:'33333'})
-  })
-
-  it('responds with 200 OK', async () => {
-    expect(res.status).toBe(200)
-  })
-
-  it('responds with the right user', async () => {
-    const expectedName = 'test'
-    const actualName = res.body.username
-
-    expect(expectedName).toEqual(actualName)
+    .send({username:'second test', password:'12345'})
+    
+    const expected = 'welcome, second test'
+    const actual = res.body.message
+    expect(expected).toEqual(actual)
   })
 })
 
 describe('/jokes tests', () => {
   let res
+  let token
   beforeEach(async () => {
-    await request(Auths).post('/login', {username:'bob', password:'33333'})
-    res = await request(Jokes).get('/')
+    await request(server).post('/api/auth/register')
+    .send({username:'third test', password:'33333'})
+    res = await request(server).post('/api/auth/login')
+    .send({username:'third test', password:'33333'})
+    token = res.body.token
+    res = await request(server).get('/api/jokes')
+    .set('Authorization', `Bearer ${token}`) 
   })
-  it('responds with 200 OK', async () => {
+
+  it('responds with 200 with token', async () => {
     expect(res.status).toBe(200)
   })
+
   it('responds with 3 jokes', async () => {
-    expect(res.body).toHaveLength(4)
+    expect(res.body).toHaveLength(3)
   })
 })
 
