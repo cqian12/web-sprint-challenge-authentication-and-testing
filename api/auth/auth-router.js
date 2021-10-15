@@ -2,21 +2,30 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs')
 const db = require('../../data/dbConfig') 
 const { checkPassword, checkUsernameExists, checkUsername } = require('../middleware/auth-mw')
-const JWT_SECRET = process.env.JWT_SECRET || 'super super secret'
+const JWT_SECRET = 'super super secret'
 const jwt = require('jsonwebtoken')
 
 router.post('/register', checkPassword, checkUsername, async (req, res, next) => {
   try {
-    let { username, password } = req.body
+    const { username, password } = req.body
 
     const hash = bcrypt.hashSync(password, 8)
-  
+
     const id = await db('users').insert({username, password:hash})
-    const [newUser] = db('users').where('id', id)
+    const [newUser] = await db('users').where('id', id)
     res.status(200).json(newUser)
   } catch(err) {
     next(err)
   }
+  
+  //   const { username, password } = req.body
+
+  //   const hash = bcrypt.hashSync(password, 8)
+  
+  //   const id = await db('users').insert({username, password:hash})
+  //   const [newUser] = db('users').where('id', id)
+  //   res.status(200).json(newUser)
+  
   /*
     IMPLEMENT
     You are welcome to build additional middlewares to help with the endpoint's functionality.
